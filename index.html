@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ThaiTalk 泰語生活會話</title>
+    <title>ThaiTalk 泰語生活會話 (擴充版)</title>
     
-    <!-- 錯誤捕捉：如果程式報錯，會直接顯示在畫面上 -->
+    <!-- 錯誤捕捉 -->
     <script>
         window.onerror = function(msg, url, line, col, error) {
             var extra = !col ? '' : '\ncolumn: ' + col;
             extra += !error ? '' : '\nerror: ' + error;
-            alert("App Error: " + msg + "\nurl: " + url + "\nline: " + line + extra);
-            document.getElementById('root').innerHTML = '<div style="padding:20px;color:red;"><h3>發生錯誤</h3><p>' + msg + '</p></div>';
+            // alert("App Error: " + msg); // Optional: uncomment for debugging
             return false;
         };
     </script>
 
-    <!-- 引入 React 和 ReactDOM (使用更穩定的 UMD 版本) -->
+    <!-- 引入 React 和 ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
@@ -61,19 +60,17 @@
 </head>
 <body class="h-screen flex justify-center items-center overflow-hidden">
 
-    <!-- 預設內容：如果 React 沒載入成功，會看到這個 -->
     <div id="root" class="w-full h-full max-w-md bg-white shadow-2xl relative overflow-hidden sm:rounded-3xl sm:h-[90vh] flex items-center justify-center">
         <div class="text-gray-400 animate-pulse text-center">
-            <p class="text-xl font-bold">App 載入中...</p>
-            <p class="text-sm mt-2">請稍候，正在初始化組件</p>
+            <p class="text-xl font-bold">載入課程中...</p>
+            <p class="text-sm mt-2">準備了 100+ 句泰語給您！</p>
         </div>
     </div>
 
     <script type="text/babel">
-        // 確保 React 物件已載入
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- Icons Components ---
+        // --- Icons ---
         const Icon = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {children}
@@ -95,45 +92,196 @@
         const Volume2 = (props) => <Icon {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></Icon>;
         const Languages = (props) => <Icon {...props}><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></Icon>;
 
-        // --- Data ---
+        // --- Expanded Data (100+ Words) ---
         const LESSONS = [
             {
                 id: 1,
-                title: "基本問候",
-                desc: "學會如何打招呼和問好",
+                title: "基本問候與禮貌",
+                desc: "最基礎的見面與道謝用語",
                 level: "入門",
                 color: "from-purple-500 to-indigo-500",
                 dialogues: [
-                    { id: 1, thai: "สวัสดี", pinyin: "Sawasdee", cn: "你好", speaker: "A" },
-                    { id: 2, thai: "สบายดีไหม", pinyin: "Sabai dee mai?", cn: "你好嗎？", speaker: "B" },
-                    { id: 3, thai: "สบายดี", pinyin: "Sabai dee", cn: "我很好", speaker: "A" },
-                    { id: 4, thai: "ขอบคุณ", pinyin: "Khob khun", cn: "謝謝", speaker: "B" },
+                    { thai: "สวัสดี", pinyin: "Sawasdee", cn: "你好" },
+                    { thai: "สบายดีไหม", pinyin: "Sabai dee mai?", cn: "你好嗎？" },
+                    { thai: "สบายดี", pinyin: "Sabai dee", cn: "我很好" },
+                    { thai: "ขอบคุณ", pinyin: "Khob khun", cn: "謝謝" },
+                    { thai: "ขอโทษ", pinyin: "Khor thote", cn: "對不起/不好意思" },
+                    { thai: "ไม่เป็นไร", pinyin: "Mai pen rai", cn: "沒關係" },
+                    { thai: "ลาก่อน", pinyin: "La gorn", cn: "再見" },
+                    { thai: "ฝันดี", pinyin: "Fun dee", cn: "晚安" },
+                    { thai: "ยินดีที่ได้รู้จัก", pinyin: "Yin dee tee dai roo jak", cn: "很高興認識你" },
+                    { thai: "เชิญ", pinyin: "Choen", cn: "請" }
                 ]
             },
             {
                 id: 2,
-                title: "餐廳點餐",
-                desc: "點泰式炒河粉和飲料",
-                level: "初級",
-                color: "from-orange-400 to-red-500",
+                title: "自我介紹",
+                desc: "向新朋友介紹自己",
+                level: "入門",
+                color: "from-blue-400 to-cyan-500",
                 dialogues: [
-                    { id: 1, thai: "ขอเมนูหน่อย", pinyin: "Khor menu noi", cn: "請給我菜單", speaker: "A" },
-                    { id: 2, thai: "เอาผัดไทย", pinyin: "Ao Pad Thai", cn: "我要泰式炒河粉", speaker: "A" },
-                    { id: 3, thai: "ไม่เผ็ด", pinyin: "Mai phet", cn: "不辣", speaker: "A" },
-                    { id: 4, thai: "น้ำเปล่า", pinyin: "Nam plao", cn: "白開水", speaker: "A" },
+                    { thai: "คุณชื่ออะไร", pinyin: "Khun chue arai?", cn: "你叫什麼名字？" },
+                    { thai: "ฉันชื่อ...", pinyin: "Chan/Phom chue...", cn: "我叫..." },
+                    { thai: "คุณเป็นคนทีไหน", pinyin: "Khun pen khon tee nai?", cn: "你是哪裡人？" },
+                    { thai: "ฉันเป็นคนไต้หวัน", pinyin: "Chan pen khon Taiwan", cn: "我是台灣人" },
+                    { thai: "ฟังไม่ออก", pinyin: "Fang mai ook", cn: "聽不懂" },
+                    { thai: "พูดภาษาอังกฤษได้ไหม", pinyin: "Pood pasa angkrit dai mai?", cn: "你會說英文嗎？" },
+                    { thai: "พูดช้าๆหน่อย", pinyin: "Pood cha cha noi", cn: "請說慢一點" },
+                    { thai: "อันนี้เรียกว่าอะไร", pinyin: "An nee riak wa arai?", cn: "這個叫什麼？" },
+                    { thai: "ฉันชอบเมืองไทย", pinyin: "Chan chob muang thai", cn: "我喜歡泰國" },
+                    { thai: "กำลังเรียนภาษาไทย", pinyin: "Kam lang rian pasa thai", cn: "正在學泰語" }
                 ]
             },
             {
                 id: 3,
-                title: "搭乘計程車",
-                desc: "告訴司機去哪裡",
-                level: "中級",
-                color: "from-green-400 to-teal-500",
+                title: "數字與金錢",
+                desc: "購物必備的數字觀念",
+                level: "初級",
+                color: "from-emerald-400 to-green-600",
                 dialogues: [
-                    { id: 1, thai: "ไปสยามพารากอน", pinyin: "Pai Siam Paragon", cn: "去暹羅百麗宮", speaker: "A" },
-                    { id: 2, thai: "กดมิเตอร์ไหม", pinyin: "Kod meter mai?", cn: "跳錶嗎？", speaker: "A" },
-                    { id: 3, thai: "เลี้ยวซ้าย", pinyin: "Liao sai", cn: "左轉", speaker: "A" },
-                    { id: 4, thai: "จอดที่นี่", pinyin: "Jod tee nee", cn: "停在這裡", speaker: "A" },
+                    { thai: "เท่าไหร่", pinyin: "Tao rai?", cn: "多少錢？" },
+                    { thai: "หนึ่ง", pinyin: "Nueng", cn: "一 (1)" },
+                    { thai: "สอง", pinyin: "Song", cn: "二 (2)" },
+                    { thai: "ห้า", pinyin: "Ha", cn: "五 (5)" },
+                    { thai: "สิบ", pinyin: "Sib", cn: "十 (10)" },
+                    { thai: "ร้อย", pinyin: "Roi", cn: "百 (100)" },
+                    { thai: "พัน", pinyin: "Pan", cn: "千 (1000)" },
+                    { thai: "แพงมาก", pinyin: "Paeng mak", cn: "太貴了" },
+                    { thai: "ลดได้ไหม", pinyin: "Lod dai mai?", cn: "可以打折嗎？" },
+                    { thai: "รับบัตรเครดิตไหม", pinyin: "Rub bat credit mai?", cn: "收信用卡嗎？" }
+                ]
+            },
+            {
+                id: 4,
+                title: "餐廳點餐",
+                desc: "吃飽喝足不求人",
+                level: "初級",
+                color: "from-orange-400 to-red-500",
+                dialogues: [
+                    { thai: "ขอเมนูหน่อย", pinyin: "Khor menu noi", cn: "請給我菜單" },
+                    { thai: "หิว", pinyin: "Hiu", cn: "餓" },
+                    { thai: "อร่อย", pinyin: "Aroi", cn: "好吃" },
+                    { thai: "ไม่เผ็ด", pinyin: "Mai phet", cn: "不辣" },
+                    { thai: "ไม่ใส่ผักชี", pinyin: "Mai sai phak chi", cn: "不加香菜" },
+                    { thai: "เอาน้ำเปล่า", pinyin: "Ao nam plao", cn: "我要白開水" },
+                    { thai: "เอาผัดไทย", pinyin: "Ao Pad Thai", cn: "我要泰式炒河粉" },
+                    { thai: "ต้มยำกุ้ง", pinyin: "Tom Yum Kung", cn: "冬蔭功湯" },
+                    { thai: "เช็คบิล", pinyin: "Check bin", cn: "買單/結帳" },
+                    { thai: "ห้องน้ำอยู่ที่ไหน", pinyin: "Hong nam yoo tee nai?", cn: "廁所在哪裡？" }
+                ]
+            },
+            {
+                id: 5,
+                title: "交通出行",
+                desc: "搭車問路必備",
+                level: "中級",
+                color: "from-cyan-500 to-blue-600",
+                dialogues: [
+                    { thai: "ไป...", pinyin: "Pai...", cn: "去..." },
+                    { thai: "สนามบิน", pinyin: "Sanam bin", cn: "機場" },
+                    { thai: "โรงแรม", pinyin: "Rong raem", cn: "飯店" },
+                    { thai: "เลี้ยวซ้าย", pinyin: "Liao sai", cn: "左轉" },
+                    { thai: "เลี้ยวขวา", pinyin: "Liao kwa", cn: "右轉" },
+                    { thai: "ตรงไป", pinyin: "Trong pai", cn: "直走" },
+                    { thai: "จอดที่นี่", pinyin: "Jod tee nee", cn: "停在這裡" },
+                    { thai: "กดมิเตอร์ไหม", pinyin: "Kod meter mai?", cn: "跳錶嗎？" },
+                    { thai: "รถติด", pinyin: "Rot tit", cn: "塞車" },
+                    { thai: "สถานีรถไฟฟ้า", pinyin: "Satanee rot fai fa", cn: "捷運站" }
+                ]
+            },
+            {
+                id: 6,
+                title: "購物與殺價",
+                desc: "夜市血拼實戰",
+                level: "中級",
+                color: "from-pink-400 to-rose-500",
+                dialogues: [
+                    { thai: "มีสีอื่นไหม", pinyin: "Mee see uen mai?", cn: "有別的顏色嗎？" },
+                    { thai: "ขอลองได้ไหม", pinyin: "Khor long dai mai?", cn: "可以試穿嗎？" },
+                    { thai: "ใหญ่เกินไป", pinyin: "Yai kern pai", cn: "太大了" },
+                    { thai: "เล็กเกินไป", pinyin: "Lek kern pai", cn: "太小了" },
+                    { thai: "เอาอันนี้", pinyin: "Ao an nee", cn: "我要這個" },
+                    { thai: "ไม่เอา", pinyin: "Mai ao", cn: "不要" },
+                    { thai: "ถูกหน่อยได้ไหม", pinyin: "Took noi dai mai?", cn: "便宜一點好嗎？" },
+                    { thai: "ลดสุดๆได้เท่าไหร่", pinyin: "Lod sud sud dai tao rai?", cn: "最低多少錢？" },
+                    { thai: "ถุงพลาสติก", pinyin: "Tung plastic", cn: "塑膠袋" },
+                    { thai: "ตลาดนัด", pinyin: "Talad nat", cn: "夜市/市集" }
+                ]
+            },
+            {
+                id: 7,
+                title: "時間與日期",
+                desc: "約定時間不遲到",
+                level: "中級",
+                color: "from-yellow-400 to-orange-500",
+                dialogues: [
+                    { thai: "กี่โมง", pinyin: "Gee mong?", cn: "幾點？" },
+                    { thai: "วันนี้", pinyin: "Wan nee", cn: "今天" },
+                    { thai: "พรุ่งนี้", pinyin: "Prung nee", cn: "明天" },
+                    { thai: "เมื่อวาน", pinyin: "Muea wan", cn: "昨天" },
+                    { thai: "ตอนเช้า", pinyin: "Ton chao", cn: "早上" },
+                    { thai: "ตอนเย็น", pinyin: "Ton yen", cn: "傍晚/晚上" },
+                    { thai: "เดี๋ยวนี้", pinyin: "Diao nee", cn: "現在" },
+                    { thai: "รอนานไหม", pinyin: "Ror nan mai?", cn: "等很久了嗎？" },
+                    { thai: "เปิดกี่โมง", pinyin: "Poet gee mong?", cn: "幾點開門？" },
+                    { thai: "ปิดกี่โมง", pinyin: "Pit gee mong?", cn: "幾點關門？" }
+                ]
+            },
+            {
+                id: 8,
+                title: "旅遊與住宿",
+                desc: "Check-in 與旅遊需求",
+                level: "中級",
+                color: "from-teal-400 to-emerald-600",
+                dialogues: [
+                    { thai: "จองไว้แล้ว", pinyin: "Jong wai laew", cn: "已經預訂了" },
+                    { thai: "ขอรหัสไวไฟ", pinyin: "Khor password wifi", cn: "請給我 Wifi 密碼" },
+                    { thai: "แอร์ไม่เย็น", pinyin: "Air mai yen", cn: "冷氣不冷" },
+                    { thai: "น้ำไม่ไหล", pinyin: "Nam mai lai", cn: "沒有水" },
+                    { thai: "ช่วยเรียกแท็กซี่ให้หน่อย", pinyin: "Chuay riak taxi hai noi", cn: "請幫我叫計程車" },
+                    { thai: "ฝากกระเป๋า", pinyin: "Fak krapao", cn: "寄放行李" },
+                    { thai: "ถ่ายรูปให้หน่อย", pinyin: "Tai roop hai noi", cn: "幫我拍張照" },
+                    { thai: "สวยมาก", pinyin: "Suay mak", cn: "很漂亮" },
+                    { thai: "ร้อนมาก", pinyin: "Ron mak", cn: "很熱" },
+                    { thai: "นวดแผนไทย", pinyin: "Nuad pan thai", cn: "泰式按摩" }
+                ]
+            },
+            {
+                id: 9,
+                title: "緊急狀況",
+                desc: "遇到困難時使用",
+                level: "高級",
+                color: "from-red-500 to-red-700",
+                dialogues: [
+                    { thai: "ช่วยด้วย", pinyin: "Chuay duay!", cn: "救命/幫忙！" },
+                    { thai: "ฉันหลงทาง", pinyin: "Chan long tang", cn: "我迷路了" },
+                    { thai: "กระเป๋าหาย", pinyin: "Krapao hai", cn: "錢包/包包不見了" },
+                    { thai: "ไม่สบาย", pinyin: "Mai sabai", cn: "不舒服/生病" },
+                    { thai: "ปวดหัว", pinyin: "Puad hua", cn: "頭痛" },
+                    { thai: "ปวดท้อง", pinyin: "Puad tong", cn: "肚子痛" },
+                    { thai: "ไปโรงพยาบาล", pinyin: "Pai rong payaban", cn: "去醫院" },
+                    { thai: "สถานีตำรวจ", pinyin: "Satanee tamruat", cn: "警察局" },
+                    { thai: "ระวัง", pinyin: "Rawang", cn: "小心" },
+                    { thai: "หยุด", pinyin: "Yut", cn: "停" }
+                ]
+            },
+            {
+                id: 10,
+                title: "日常閒聊與感受",
+                desc: "表達情緒與感覺",
+                level: "高級",
+                color: "from-indigo-400 to-purple-600",
+                dialogues: [
+                    { thai: "เหนื่อย", pinyin: "Nueai", cn: "累" },
+                    { thai: "ง่วงนอน", pinyin: "Nguang non", cn: "想睡覺" },
+                    { thai: "ดีใจ", pinyin: "Dee jai", cn: "高興" },
+                    { thai: "เสียใจ", pinyin: "Sia jai", cn: "難過" },
+                    { thai: "สนุกไหม", pinyin: "Sanuk mai?", cn: "好玩嗎？" },
+                    { thai: "สนุกมาก", pinyin: "Sanuk mak", cn: "很好玩" },
+                    { thai: "น่าเบื่อ", pinyin: "Na buea", cn: "無聊" },
+                    { thai: "คิดถึง", pinyin: "Kid tueng", cn: "想念" },
+                    { thai: "รัก", pinyin: "Rak", cn: "愛" },
+                    { thai: "จริงๆหรอ", pinyin: "Jing jing ror?", cn: "真的嗎？" }
                 ]
             }
         ];
@@ -188,57 +336,62 @@
             </div>
         );
 
-        const HomeView = ({ onStartLesson }) => (
-            <div className="pb-24 w-full">
-                <Header title="Sawasdee! 🙏" subtitle="準備好學習今天的泰語了嗎？" />
-                
-                <div className="px-6 space-y-6">
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
-                        <div>
-                            <p className="text-gray-500 text-sm">今日學習</p>
-                            <p className="text-2xl font-bold text-gray-800">15 <span className="text-sm font-normal text-gray-400">分鐘</span></p>
-                        </div>
-                        <div className="h-10 w-px bg-gray-200"></div>
-                        <div>
-                            <p className="text-gray-500 text-sm">已掌握詞彙</p>
-                            <p className="text-2xl font-bold text-gray-800">42 <span className="text-sm font-normal text-gray-400">個</span></p>
-                        </div>
-                    </div>
+        const HomeView = ({ onStartLesson }) => {
+            // Calculate total words dynamically
+            const totalWords = useMemo(() => LESSONS.reduce((acc, curr) => acc + curr.dialogues.length, 0), []);
 
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800 mb-3">繼續學習</h3>
-                        <div 
-                            onClick={() => onStartLesson(LESSONS[0])}
-                            className="bg-purple-50 p-4 rounded-2xl border border-purple-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="bg-purple-100 p-2 rounded-full text-purple-600">
-                                    <Play size={20} />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-gray-800">基本問候</p>
-                                    <p className="text-xs text-gray-500">進度: 50%</p>
-                                </div>
+            return (
+                <div className="pb-24 w-full">
+                    <Header title="Sawasdee! 🙏" subtitle="準備好學習今天的泰語了嗎？" />
+                    
+                    <div className="px-6 space-y-6">
+                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                            <div>
+                                <p className="text-gray-500 text-sm">今日學習</p>
+                                <p className="text-2xl font-bold text-gray-800">15 <span className="text-sm font-normal text-gray-400">分鐘</span></p>
                             </div>
-                            <ChevronRight size={20} className="text-gray-400" />
+                            <div className="h-10 w-px bg-gray-200"></div>
+                            <div>
+                                <p className="text-gray-500 text-sm">已掌握詞彙</p>
+                                <p className="text-2xl font-bold text-gray-800">{totalWords} <span className="text-sm font-normal text-gray-400">句</span></p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <button onClick={() => onStartLesson(LESSONS[1])} className="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-left hover:bg-orange-100 transition-colors">
-                            <Languages className="text-orange-500 mb-2" />
-                            <p className="font-bold text-gray-800">詞彙卡</p>
-                            <p className="text-xs text-gray-500">今日 10 個新詞</p>
-                        </button>
-                        <button onClick={() => onStartLesson(LESSONS[2])} className="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-left hover:bg-blue-100 transition-colors">
-                            <MessageCircle className="text-blue-500 mb-2" />
-                            <p className="font-bold text-gray-800">情境對話</p>
-                            <p className="text-xs text-gray-500">模擬真實場景</p>
-                        </button>
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-800 mb-3">推薦課程</h3>
+                            <div 
+                                onClick={() => onStartLesson(LESSONS[0])}
+                                className="bg-purple-50 p-4 rounded-2xl border border-purple-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-purple-100 p-2 rounded-full text-purple-600">
+                                        <Play size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-gray-800">基本問候與禮貌</p>
+                                        <p className="text-xs text-gray-500">入門必學</p>
+                                    </div>
+                                </div>
+                                <ChevronRight size={20} className="text-gray-400" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button onClick={() => onStartLesson(LESSONS[3])} className="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-left hover:bg-orange-100 transition-colors">
+                                <Languages className="text-orange-500 mb-2" />
+                                <p className="font-bold text-gray-800">餐廳點餐</p>
+                                <p className="text-xs text-gray-500">吃貨必備</p>
+                            </button>
+                            <button onClick={() => onStartLesson(LESSONS[5])} className="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-left hover:bg-blue-100 transition-colors">
+                                <MessageCircle className="text-blue-500 mb-2" />
+                                <p className="font-bold text-gray-800">購物殺價</p>
+                                <p className="text-xs text-gray-500">買東西不吃虧</p>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         const LearnView = ({ onSelectLesson }) => (
             <div className="pb-24 w-full">
@@ -257,6 +410,7 @@
                             </div>
                             <h3 className="text-xl font-bold text-gray-800">{lesson.title}</h3>
                             <p className="text-gray-500 text-sm mt-1">{lesson.desc}</p>
+                            <p className="text-xs text-gray-400 mt-2 text-right">{lesson.dialogues.length} 句對話</p>
                         </div>
                     ))}
                 </div>
@@ -290,12 +444,12 @@
                             <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 items-start">
                                 <button 
                                     onClick={() => speakText(line.thai)}
-                                    className="mt-1 min-w-[40px] h-[40px] rounded-full bg-purple-100 flex items-center justify-center text-purple-600 hover:bg-purple-200 active:scale-95 transition-all"
+                                    className="mt-1 min-w-[40px] h-[40px] rounded-full bg-purple-100 flex items-center justify-center text-purple-600 hover:bg-purple-200 active:scale-95 transition-all flex-shrink-0"
                                 >
                                     <Volume2 size={20} />
                                 </button>
                                 <div className="flex-1">
-                                    <p className="text-xl font-bold text-gray-800 font-thai">{line.thai}</p>
+                                    <p className="text-xl font-bold text-gray-800 font-thai break-words">{line.thai}</p>
                                     <p className="text-purple-600 font-medium text-sm">{line.pinyin}</p>
                                     <p className="text-gray-500 text-sm mt-1">{line.cn}</p>
                                 </div>
@@ -319,7 +473,8 @@
             const [score, setScore] = useState(0);
             const [currentIdx, setCurrentIdx] = useState(0);
 
-            const practiceSentences = LESSONS.flatMap(l => l.dialogues);
+            // Flatten all dialogues for practice
+            const practiceSentences = useMemo(() => LESSONS.flatMap(l => l.dialogues), []);
             const currentSentence = practiceSentences[currentIdx];
             const recognitionRef = useRef(null);
 
@@ -411,7 +566,7 @@
                             <div className="absolute top-0 left-0 h-1 bg-purple-600 transition-all duration-300" style={{width: `${score}%`}}></div>
                             
                             <p className="text-gray-500 text-sm mb-2">請唸出下面的句子：</p>
-                            <h3 className="text-3xl font-bold text-gray-800 mb-2 font-thai">{currentSentence.thai}</h3>
+                            <h3 className="text-3xl font-bold text-gray-800 mb-2 font-thai break-words">{currentSentence.thai}</h3>
                             <p className="text-purple-600 font-medium mb-4">{currentSentence.pinyin}</p>
                             
                             <button onClick={playTargetAudio} className="inline-flex items-center gap-2 text-gray-500 text-sm bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200">
@@ -486,15 +641,15 @@
             const [showResult, setShowResult] = useState(false);
             const [selectedOption, setSelectedOption] = useState(null);
 
-            const allDialogues = LESSONS.flatMap(l => l.dialogues);
+            const allDialogues = useMemo(() => LESSONS.flatMap(l => l.dialogues), []);
             const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
             
             const quizDataRef = useRef(null);
             // 只有在第一次渲染時生成題目
             if (!quizDataRef.current) {
-                const pool = shuffle(allDialogues).slice(0, 5);
+                const pool = shuffle(allDialogues).slice(0, 10); // 增加題目數量到 10 題
                 quizDataRef.current = pool.map(item => {
-                    const wrongOptions = shuffle(allDialogues.filter(d => d.id !== item.id)).slice(0, 3).map(d => d.cn);
+                    const wrongOptions = shuffle(allDialogues.filter(d => d.cn !== item.cn)).slice(0, 3).map(d => d.cn);
                     return {
                         questionAudio: item.thai,
                         correct: item.cn,
@@ -634,7 +789,6 @@
             );
         };
 
-        // 使用更穩健的渲染方式 (React 18 createRoot)
         const container = document.getElementById('root');
         const root = ReactDOM.createRoot(container);
         root.render(<App />);
