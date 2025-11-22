@@ -1,561 +1,343 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Mic, Play, Pause, RotateCcw, CheckCircle, 
-  XCircle, Home, BookOpen, MessageCircle, 
-  Award, Settings, ChevronRight, Volume2, 
-  Languages, Star
-} from 'lucide-react';
-
-// --- Data & Content ---
-
-const LESSONS = [
-  {
-    id: 1,
-    title: "基本問候",
-    desc: "學會如何打招呼和問好",
-    level: "入門",
-    color: "from-purple-500 to-indigo-500",
-    dialogues: [
-      { id: 1, thai: "สวัสดี", pinyin: "Sawasdee", cn: "你好", speaker: "A" },
-      { id: 2, thai: "สบายดีไหม", pinyin: "Sabai dee mai?", cn: "你好嗎？", speaker: "B" },
-      { id: 3, thai: "สบายดี", pinyin: "Sabai dee", cn: "我很好", speaker: "A" },
-      { id: 4, thai: "ขอบคุณ", pinyin: "Khob khun", cn: "謝謝", speaker: "B" },
-    ]
-  },
-  {
-    id: 2,
-    title: "餐廳點餐",
-    desc: "點泰式炒河粉和飲料",
-    level: "初級",
-    color: "from-orange-400 to-red-500",
-    dialogues: [
-      { id: 1, thai: "ขอเมนูหน่อย", pinyin: "Khor menu noi", cn: "請給我菜單", speaker: "A" },
-      { id: 2, thai: "เอาผัดไทย", pinyin: "Ao Pad Thai", cn: "我要泰式炒河粉", speaker: "A" },
-      { id: 3, thai: "ไม่เผ็ด", pinyin: "Mai phet", cn: "不辣", speaker: "A" },
-      { id: 4, thai: "น้ำเปล่า", pinyin: "Nam plao", cn: "白開水", speaker: "A" },
-    ]
-  },
-  {
-    id: 3,
-    title: "搭乘計程車",
-    desc: "告訴司機去哪裡",
-    level: "中級",
-    color: "from-green-400 to-teal-500",
-    dialogues: [
-      { id: 1, thai: "ไปสยามพารากอน", pinyin: "Pai Siam Paragon", cn: "去暹羅百麗宮", speaker: "A" },
-      { id: 2, thai: "กดมิเตอร์ไหม", pinyin: "Kod meter mai?", cn: "跳錶嗎？", speaker: "A" },
-      { id: 3, thai: "เลี้ยวซ้าย", pinyin: "Liao sai", cn: "左轉", speaker: "A" },
-      { id: 4, thai: "จอดที่นี่", pinyin: "Jod tee nee", cn: "停在這裡", speaker: "A" },
-    ]
-  }
-];
-
-// --- Utilities ---
-
-// Simple string similarity to simulate AI grading (0-100 score)
-const calculateSimilarity = (str1, str2) => {
-  const s1 = str1.toLowerCase().replace(/[^a-z0-9ก-๙]/g, ""); // Include Thai chars range
-  const s2 = str2.toLowerCase().replace(/[^a-z0-9ก-๙]/g, "");
-  
-  if (s1 === s2) return 100;
-  
-  // Basic token matching overlap for MVP
-  const tokens1 = s1.split('');
-  const tokens2 = s2.split('');
-  const intersection = tokens1.filter(x => tokens2.includes(x));
-  
-  const score = Math.round((intersection.length / Math.max(tokens1.length, tokens2.length)) * 100);
-  return Math.max(0, Math.min(100, score)); // Clamp 0-100
-};
-
-// --- Components ---
-
-const Navigation = ({ activeTab, setActiveTab }) => (
-  <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-6 flex justify-between items-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-    <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center ${activeTab === 'home' ? 'text-purple-600' : 'text-gray-400'}`}>
-      <Home size={24} />
-      <span className="text-xs mt-1">首頁</span>
-    </button>
-    <button onClick={() => setActiveTab('learn')} className={`flex flex-col items-center ${activeTab === 'learn' ? 'text-purple-600' : 'text-gray-400'}`}>
-      <BookOpen size={24} />
-      <span className="text-xs mt-1">課程</span>
-    </button>
-    <div className="relative -top-5">
-      <button onClick={() => setActiveTab('speak')} className="bg-purple-600 text-white p-4 rounded-full shadow-lg hover:bg-purple-700 transition-colors border-4 border-white">
-        <Mic size={28} />
-      </button>
-    </div>
-    <button onClick={() => setActiveTab('quiz')} className={`flex flex-col items-center ${activeTab === 'quiz' ? 'text-purple-600' : 'text-gray-400'}`}>
-      <Award size={24} />
-      <span className="text-xs mt-1">測驗</span>
-    </button>
-    <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center ${activeTab === 'profile' ? 'text-purple-600' : 'text-gray-400'}`}>
-      <Settings size={24} />
-      <span className="text-xs mt-1">設定</span>
-    </button>
-  </div>
-);
-
-const Header = ({ title, subtitle }) => (
-  <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white rounded-b-3xl shadow-lg mb-6">
-    <h1 className="text-2xl font-bold">{title}</h1>
-    {subtitle && <p className="text-purple-100 text-sm mt-1">{subtitle}</p>}
-  </div>
-);
-
-// --- Feature Views ---
-
-const HomeView = ({ onStartLesson }) => (
-  <div className="pb-24">
-    <Header title="Sawasdee! 🙏" subtitle="準備好學習今天的泰語了嗎？" />
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ThaiTalk 泰語生活會話</title>
     
-    <div className="px-6 space-y-6">
-      {/* Daily Stats */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
-        <div>
-          <p className="text-gray-500 text-sm">今日學習</p>
-          <p className="text-2xl font-bold text-gray-800">15 <span className="text-sm font-normal text-gray-400">分鐘</span></p>
-        </div>
-        <div className="h-10 w-px bg-gray-200"></div>
-        <div>
-          <p className="text-gray-500 text-sm">已掌握詞彙</p>
-          <p className="text-2xl font-bold text-gray-800">42 <span className="text-sm font-normal text-gray-400">個</span></p>
-        </div>
-      </div>
-
-      {/* Continue Learning */}
-      <div>
-        <h3 className="text-lg font-bold text-gray-800 mb-3">繼續學習</h3>
-        <div 
-          onClick={() => onStartLesson(LESSONS[0])}
-          className="bg-purple-50 p-4 rounded-2xl border border-purple-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform"
-        >
-          <div className="flex items-center gap-3">
-            <div className="bg-purple-100 p-2 rounded-full text-purple-600">
-              <Play size={20} fill="currentColor" />
-            </div>
-            <div>
-              <p className="font-bold text-gray-800">基本問候</p>
-              <p className="text-xs text-gray-500">進度: 50%</p>
-            </div>
-          </div>
-          <ChevronRight size={20} className="text-gray-400" />
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <button onClick={() => onStartLesson(LESSONS[1])} className="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-left hover:bg-orange-100 transition-colors">
-          <Languages className="text-orange-500 mb-2" />
-          <p className="font-bold text-gray-800">詞彙卡</p>
-          <p className="text-xs text-gray-500">今日 10 個新詞</p>
-        </button>
-        <button onClick={() => onStartLesson(LESSONS[2])} className="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-left hover:bg-blue-100 transition-colors">
-          <MessageCircle className="text-blue-500 mb-2" />
-          <p className="font-bold text-gray-800">情境對話</p>
-          <p className="text-xs text-gray-500">模擬真實場景</p>
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
-const LearnView = ({ onSelectLesson }) => (
-  <div className="pb-24">
-    <Header title="課程列表" subtitle="選擇一個生活場景開始" />
-    <div className="px-4 space-y-4">
-      {LESSONS.map((lesson) => (
-        <div 
-          key={lesson.id} 
-          onClick={() => onSelectLesson(lesson)}
-          className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all active:scale-95"
-        >
-          <div className="flex justify-between items-start mb-2">
-            <span className={`text-xs font-bold px-2 py-1 rounded text-white bg-gradient-to-r ${lesson.color}`}>
-              {lesson.level}
-            </span>
-          </div>
-          <h3 className="text-xl font-bold text-gray-800">{lesson.title}</h3>
-          <p className="text-gray-500 text-sm mt-1">{lesson.desc}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const LessonDetailView = ({ lesson, onBack }) => {
-  const speakText = (text) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'th-TH'; // Thai language code
-      utterance.rate = 0.9; // Slightly slower for learning
-      window.speechSynthesis.speak(utterance);
-    } else {
-      alert("您的瀏覽器不支援語音合成");
-    }
-  };
-
-  return (
-    <div className="pb-24 bg-gray-50 min-h-screen">
-      <div className="sticky top-0 bg-white shadow-sm z-10 px-4 py-3 flex items-center gap-3">
-        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
-          <ChevronRight className="rotate-180 text-gray-600" />
-        </button>
-        <h2 className="font-bold text-lg text-gray-800">{lesson.title}</h2>
-      </div>
-
-      <div className="p-4 space-y-4">
-        {lesson.dialogues.map((line, idx) => (
-          <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 items-start">
-            <button 
-              onClick={() => speakText(line.thai)}
-              className="mt-1 min-w-[40px] h-[40px] rounded-full bg-purple-100 flex items-center justify-center text-purple-600 hover:bg-purple-200 active:scale-95 transition-all"
-            >
-              <Volume2 size={20} />
-            </button>
-            <div className="flex-1">
-              <p className="text-xl font-bold text-gray-800 font-thai">{line.thai}</p>
-              <p className="text-purple-600 font-medium text-sm">{line.pinyin}</p>
-              <p className="text-gray-500 text-sm mt-1">{line.cn}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      <div className="fixed bottom-24 left-0 right-0 px-6">
-        <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-lg text-center border border-blue-100">
-           提示：點擊喇叭圖示聽發音
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const SpeakPracticeView = () => {
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [feedback, setFeedback] = useState(null); // null, 'success', 'try-again'
-  const [score, setScore] = useState(0);
-  const [currentIdx, setCurrentIdx] = useState(0);
-
-  // Flatten all dialogues for practice
-  const practiceSentences = LESSONS.flatMap(l => l.dialogues);
-  const currentSentence = practiceSentences[currentIdx];
-
-  const recognitionRef = useRef(null);
-
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = true; // Show results as speaking
-      recognitionRef.current.lang = 'th-TH';
-
-      recognitionRef.current.onresult = (event) => {
-        const current = event.resultIndex;
-        const transcriptText = event.results[current][0].transcript;
-        setTranscript(transcriptText);
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-        // Only evaluate if we have text
-        if (transcript) {
-            evaluateSpeech(transcript);
-        }
-      };
-      
-      recognitionRef.current.onerror = (event) => {
-        console.error("Speech error", event.error);
-        setIsListening(false);
-      };
-
-    } else {
-      alert("您的瀏覽器不支援語音辨識，請使用 Chrome 瀏覽器。");
-    }
-  }, [currentIdx, transcript]); 
-  
-  // Custom evaluator helper
-  const evaluateSpeech = (finalText) => {
-      const simScore = calculateSimilarity(finalText, currentSentence.thai);
-      setScore(simScore);
-      if (simScore > 60) {
-        setFeedback('success');
-      } else {
-        setFeedback('try-again');
-      }
-  };
-
-  const toggleListening = () => {
-    if (isListening) {
-      recognitionRef.current.stop();
-      // Evaluation happens in onend
-    } else {
-      setTranscript('');
-      setFeedback(null);
-      setScore(0);
-      try {
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch(e) {
-        console.error("Start error", e);
-      }
-    }
-  };
-
-  const playTargetAudio = () => {
-    const u = new SpeechSynthesisUtterance(currentSentence.thai);
-    u.lang = 'th-TH';
-    window.speechSynthesis.speak(u);
-  };
-
-  const nextSentence = () => {
-    setTranscript('');
-    setFeedback(null);
-    setScore(0);
-    setCurrentIdx((prev) => (prev + 1) % practiceSentences.length);
-  };
-
-  return (
-    <div className="pb-24 h-screen flex flex-col bg-gray-50">
-      <Header title="AI 口說教練" subtitle="像母語者一樣開口說" />
-      
-      <div className="flex-1 px-6 flex flex-col items-center justify-center space-y-8">
-        
-        {/* Card */}
-        <div className="w-full bg-white rounded-3xl p-8 shadow-lg text-center border border-gray-100 relative overflow-hidden">
-            {/* Progress indicator */}
-            <div className="absolute top-0 left-0 h-1 bg-purple-600 transition-all duration-300" style={{width: `${score}%`}}></div>
-            
-            <p className="text-gray-500 text-sm mb-2">請唸出下面的句子：</p>
-            <h3 className="text-3xl font-bold text-gray-800 mb-2 font-thai">{currentSentence.thai}</h3>
-            <p className="text-purple-600 font-medium mb-4">{currentSentence.pinyin}</p>
-            
-            <button onClick={playTargetAudio} className="inline-flex items-center gap-2 text-gray-500 text-sm bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200">
-                <Volume2 size={14} /> 播放原音
-            </button>
-        </div>
-
-        {/* Feedback Area */}
-        <div className="h-32 w-full flex flex-col items-center justify-center">
-            {isListening ? (
-                <div className="flex flex-col items-center animate-pulse">
-                    <span className="text-purple-600 font-bold mb-2">正在聽...</span>
-                    <div className="flex gap-1">
-                        <div className="w-1 h-4 bg-purple-400 animate-[bounce_1s_infinite]"></div>
-                        <div className="w-1 h-6 bg-purple-500 animate-[bounce_1.1s_infinite]"></div>
-                        <div className="w-1 h-4 bg-purple-400 animate-[bounce_1.2s_infinite]"></div>
-                    </div>
-                    <p className="text-gray-400 text-xs mt-2">{transcript || "請說話..."}</p>
-                </div>
-            ) : feedback ? (
-                <div className="text-center animate-in fade-in slide-in-from-bottom-4">
-                    {feedback === 'success' ? (
-                        <>
-                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 text-green-600">
-                                <CheckCircle size={32} />
-                            </div>
-                            <p className="font-bold text-green-700">太棒了! 準確度: {score}%</p>
-                            <p className="text-xs text-gray-500 mt-1">辨識: {transcript}</p>
-                        </>
-                    ) : (
-                        <>
-                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2 text-red-600">
-                                <XCircle size={32} />
-                            </div>
-                            <p className="font-bold text-red-700">再試一次? 準確度: {score}%</p>
-                            <p className="text-xs text-gray-500 mt-1">辨識: {transcript}</p>
-                        </>
-                    )}
-                </div>
-            ) : (
-                <p className="text-gray-400 text-sm">點擊麥克風開始跟讀</p>
-            )}
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center gap-6">
-            <button 
-                onClick={toggleListening}
-                className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition-all ${
-                    isListening ? 'bg-red-500 text-white scale-110' : 'bg-purple-600 text-white hover:bg-purple-700'
-                }`}
-            >
-                {isListening ? <Pause size={32} fill="currentColor" /> : <Mic size={32} />}
-            </button>
-
-            {(feedback === 'success' || feedback === 'try-again') && (
-                <button 
-                    onClick={nextSentence}
-                    className="absolute right-6 bottom-32 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700"
-                >
-                    <ChevronRight size={24} />
-                </button>
-            )}
-        </div>
-
-      </div>
-    </div>
-  );
-};
-
-const QuizView = () => {
-  const [qIndex, setQIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [showResult, setShowResult] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null);
-
-  // Generate simple quiz data based on lessons
-  const allDialogues = LESSONS.flatMap(l => l.dialogues);
-  // Shuffle utility
-  const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
-  
-  const [quizData] = useState(() => {
-    // Create 5 random questions
-    const pool = shuffle(allDialogues).slice(0, 5);
-    return pool.map(item => {
-        const wrongOptions = shuffle(allDialogues.filter(d => d.id !== item.id)).slice(0, 3).map(d => d.cn);
-        return {
-            questionAudio: item.thai,
-            correct: item.cn,
-            options: shuffle([item.cn, ...wrongOptions])
-        };
-    });
-  });
-
-  const handleAnswer = (option) => {
-    setSelectedOption(option);
-    if (option === quizData[qIndex].correct) {
-      setScore(s => s + 1);
-    }
+    <!-- 引入 React 和 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    setTimeout(() => {
-      if (qIndex < quizData.length - 1) {
-        setQIndex(prev => prev + 1);
-        setSelectedOption(null);
-      } else {
-        setShowResult(true);
-      }
-    }, 1000); // Delay to show color feedback
-  };
-
-  const playQuestionAudio = () => {
-    const u = new SpeechSynthesisUtterance(quizData[qIndex].questionAudio);
-    u.lang = 'th-TH';
-    window.speechSynthesis.speak(u);
-  };
-
-  const restartQuiz = () => {
-    setQIndex(0);
-    setScore(0);
-    setShowResult(false);
-    setSelectedOption(null);
-  };
-
-  if (showResult) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-purple-50 p-6 pb-24">
-        <Award size={64} className="text-yellow-500 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">測驗完成!</h2>
-        <p className="text-gray-600 mb-6">你的得分</p>
-        <div className="text-6xl font-bold text-purple-600 mb-8">{score} / {quizData.length}</div>
-        <button onClick={restartQuiz} className="bg-purple-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
-            <RotateCcw size={20} /> 再測一次
-        </button>
-      </div>
-    );
-  }
-
-  const currentQ = quizData[qIndex];
-
-  return (
-    <div className="pb-24 min-h-screen bg-gray-50">
-       <Header title="聽力大挑戰" subtitle={`第 ${qIndex + 1} / ${quizData.length} 題`} />
-       
-       <div className="px-6 mt-8">
-         <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 flex flex-col items-center mb-8">
-            <button 
-                onClick={playQuestionAudio}
-                className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mb-4 hover:scale-105 transition-transform"
-            >
-                <Volume2 size={32} />
-            </button>
-            <p className="text-gray-500 text-sm">點擊按鈕播放泰語</p>
-         </div>
-
-         <div className="space-y-3">
-            {currentQ.options.map((opt, idx) => {
-                let btnClass = "bg-white border-gray-200 text-gray-700 hover:bg-gray-50";
-                if (selectedOption) {
-                    if (opt === currentQ.correct) btnClass = "bg-green-100 border-green-300 text-green-700";
-                    else if (opt === selectedOption) btnClass = "bg-red-100 border-red-300 text-red-700";
-                    else btnClass = "opacity-50 bg-gray-100";
+    <!-- 引入 Babel 用於解析 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 設定 Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans TC', 'Prompt', 'sans-serif'],
+                        thai: ['Prompt', 'sans-serif']
+                    }
                 }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Prompt:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-thai {
+            font-family: 'Prompt', sans-serif;
+        }
+        /* 隱藏滾動條但保持功能 */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex justify-center items-center overflow-hidden">
 
-                return (
-                    <button
-                        key={idx}
-                        disabled={!!selectedOption}
-                        onClick={() => handleAnswer(opt)}
-                        className={`w-full p-4 rounded-xl border-2 font-medium transition-all ${btnClass}`}
-                    >
-                        {opt}
+    <div id="root" class="w-full h-full max-w-md bg-white shadow-2xl relative overflow-hidden sm:rounded-3xl sm:h-[90vh]"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Icons (Inline SVGs to replace Lucide for single file portability) ---
+        const Icon = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const Mic = (props) => <Icon {...props}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></Icon>;
+        const Play = (props) => <Icon {...props}><polygon points="6 3 20 12 6 21 6 3"/></Icon>;
+        const Pause = (props) => <Icon {...props}><rect width="4" height="16" x="6" y="4"/><rect width="4" height="16" x="14" y="4"/></Icon>;
+        const RotateCcw = (props) => <Icon {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
+        const XCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></Icon>;
+        const Home = (props) => <Icon {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>;
+        const BookOpen = (props) => <Icon {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></Icon>;
+        const MessageCircle = (props) => <Icon {...props}><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></Icon>;
+        const Award = (props) => <Icon {...props}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></Icon>;
+        const Settings = (props) => <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Icon>;
+        const ChevronRight = (props) => <Icon {...props}><path d="m9 18 6-6-6-6"/></Icon>;
+        const Volume2 = (props) => <Icon {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></Icon>;
+        const Languages = (props) => <Icon {...props}><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></Icon>;
+
+        // --- Data ---
+        const LESSONS = [
+            {
+                id: 1,
+                title: "基本問候",
+                desc: "學會如何打招呼和問好",
+                level: "入門",
+                color: "from-purple-500 to-indigo-500",
+                dialogues: [
+                    { id: 1, thai: "สวัสดี", pinyin: "Sawasdee", cn: "你好", speaker: "A" },
+                    { id: 2, thai: "สบายดีไหม", pinyin: "Sabai dee mai?", cn: "你好嗎？", speaker: "B" },
+                    { id: 3, thai: "สบายดี", pinyin: "Sabai dee", cn: "我很好", speaker: "A" },
+                    { id: 4, thai: "ขอบคุณ", pinyin: "Khob khun", cn: "謝謝", speaker: "B" },
+                ]
+            },
+            {
+                id: 2,
+                title: "餐廳點餐",
+                desc: "點泰式炒河粉和飲料",
+                level: "初級",
+                color: "from-orange-400 to-red-500",
+                dialogues: [
+                    { id: 1, thai: "ขอเมนูหน่อย", pinyin: "Khor menu noi", cn: "請給我菜單", speaker: "A" },
+                    { id: 2, thai: "เอาผัดไทย", pinyin: "Ao Pad Thai", cn: "我要泰式炒河粉", speaker: "A" },
+                    { id: 3, thai: "ไม่เผ็ด", pinyin: "Mai phet", cn: "不辣", speaker: "A" },
+                    { id: 4, thai: "น้ำเปล่า", pinyin: "Nam plao", cn: "白開水", speaker: "A" },
+                ]
+            },
+            {
+                id: 3,
+                title: "搭乘計程車",
+                desc: "告訴司機去哪裡",
+                level: "中級",
+                color: "from-green-400 to-teal-500",
+                dialogues: [
+                    { id: 1, thai: "ไปสยามพารากอน", pinyin: "Pai Siam Paragon", cn: "去暹羅百麗宮", speaker: "A" },
+                    { id: 2, thai: "กดมิเตอร์ไหม", pinyin: "Kod meter mai?", cn: "跳錶嗎？", speaker: "A" },
+                    { id: 3, thai: "เลี้ยวซ้าย", pinyin: "Liao sai", cn: "左轉", speaker: "A" },
+                    { id: 4, thai: "จอดที่นี่", pinyin: "Jod tee nee", cn: "停在這裡", speaker: "A" },
+                ]
+            }
+        ];
+
+        const calculateSimilarity = (str1, str2) => {
+            const s1 = str1.toLowerCase().replace(/[^a-z0-9ก-๙]/g, "");
+            const s2 = str2.toLowerCase().replace(/[^a-z0-9ก-๙]/g, "");
+            
+            if (s1 === s2) return 100;
+            
+            const tokens1 = s1.split('');
+            const tokens2 = s2.split('');
+            const intersection = tokens1.filter(x => tokens2.includes(x));
+            
+            const score = Math.round((intersection.length / Math.max(tokens1.length, tokens2.length)) * 100);
+            return Math.max(0, Math.min(100, score));
+        };
+
+        // --- Components ---
+
+        const Navigation = ({ activeTab, setActiveTab }) => (
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-6 flex justify-between items-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] absolute max-w-md mx-auto">
+                <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center ${activeTab === 'home' ? 'text-purple-600' : 'text-gray-400'}`}>
+                    <Home size={24} />
+                    <span className="text-xs mt-1">首頁</span>
+                </button>
+                <button onClick={() => setActiveTab('learn')} className={`flex flex-col items-center ${activeTab === 'learn' ? 'text-purple-600' : 'text-gray-400'}`}>
+                    <BookOpen size={24} />
+                    <span className="text-xs mt-1">課程</span>
+                </button>
+                <div className="relative -top-5">
+                    <button onClick={() => setActiveTab('speak')} className="bg-purple-600 text-white p-4 rounded-full shadow-lg hover:bg-purple-700 transition-colors border-4 border-white">
+                        <Mic size={28} />
                     </button>
-                );
-            })}
-         </div>
-       </div>
-    </div>
-  );
-};
+                </div>
+                <button onClick={() => setActiveTab('quiz')} className={`flex flex-col items-center ${activeTab === 'quiz' ? 'text-purple-600' : 'text-gray-400'}`}>
+                    <Award size={24} />
+                    <span className="text-xs mt-1">測驗</span>
+                </button>
+                <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center ${activeTab === 'profile' ? 'text-purple-600' : 'text-gray-400'}`}>
+                    <Settings size={24} />
+                    <span className="text-xs mt-1">設定</span>
+                </button>
+            </div>
+        );
 
-// --- Main App Container ---
+        const Header = ({ title, subtitle }) => (
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white rounded-b-3xl shadow-lg mb-6">
+                <h1 className="text-2xl font-bold">{title}</h1>
+                {subtitle && <p className="text-purple-100 text-sm mt-1">{subtitle}</p>}
+            </div>
+        );
 
-const ThaiLearningApp = () => {
-  const [activeTab, setActiveTab] = useState('home');
-  const [selectedLesson, setSelectedLesson] = useState(null);
+        const HomeView = ({ onStartLesson }) => (
+            <div className="pb-24">
+                <Header title="Sawasdee! 🙏" subtitle="準備好學習今天的泰語了嗎？" />
+                
+                <div className="px-6 space-y-6">
+                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <p className="text-gray-500 text-sm">今日學習</p>
+                            <p className="text-2xl font-bold text-gray-800">15 <span className="text-sm font-normal text-gray-400">分鐘</span></p>
+                        </div>
+                        <div className="h-10 w-px bg-gray-200"></div>
+                        <div>
+                            <p className="text-gray-500 text-sm">已掌握詞彙</p>
+                            <p className="text-2xl font-bold text-gray-800">42 <span className="text-sm font-normal text-gray-400">個</span></p>
+                        </div>
+                    </div>
 
-  const handleStartLesson = (lesson) => {
-    setSelectedLesson(lesson);
-    setActiveTab('learn');
-  };
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-800 mb-3">繼續學習</h3>
+                        <div 
+                            onClick={() => onStartLesson(LESSONS[0])}
+                            className="bg-purple-50 p-4 rounded-2xl border border-purple-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="bg-purple-100 p-2 rounded-full text-purple-600">
+                                    <Play size={20} />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-gray-800">基本問候</p>
+                                    <p className="text-xs text-gray-500">進度: 50%</p>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} className="text-gray-400" />
+                        </div>
+                    </div>
 
-  const renderContent = () => {
-    // If a lesson is selected inside Learn tab
-    if (activeTab === 'learn' && selectedLesson) {
-        return <LessonDetailView lesson={selectedLesson} onBack={() => setSelectedLesson(null)} />;
-    }
+                    <div className="grid grid-cols-2 gap-4">
+                        <button onClick={() => onStartLesson(LESSONS[1])} className="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-left hover:bg-orange-100 transition-colors">
+                            <Languages className="text-orange-500 mb-2" />
+                            <p className="font-bold text-gray-800">詞彙卡</p>
+                            <p className="text-xs text-gray-500">今日 10 個新詞</p>
+                        </button>
+                        <button onClick={() => onStartLesson(LESSONS[2])} className="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-left hover:bg-blue-100 transition-colors">
+                            <MessageCircle className="text-blue-500 mb-2" />
+                            <p className="font-bold text-gray-800">情境對話</p>
+                            <p className="text-xs text-gray-500">模擬真實場景</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
 
-    switch (activeTab) {
-      case 'home': return <HomeView onStartLesson={handleStartLesson} />;
-      case 'learn': return <LearnView onSelectLesson={(l) => { setSelectedLesson(l); }} />;
-      case 'speak': return <SpeakPracticeView />;
-      case 'quiz': return <QuizView />;
-      case 'profile': return (
-        <div className="flex flex-col items-center justify-center h-screen pb-24 text-gray-400">
-            <Settings size={48} className="mb-4 opacity-50" />
-            <p>設定功能開發中...</p>
-        </div>
-      );
-      default: return <HomeView />;
-    }
-  };
+        const LearnView = ({ onSelectLesson }) => (
+            <div className="pb-24">
+                <Header title="課程列表" subtitle="選擇一個生活場景開始" />
+                <div className="px-4 space-y-4">
+                    {LESSONS.map((lesson) => (
+                        <div 
+                            key={lesson.id} 
+                            onClick={() => onSelectLesson(lesson)}
+                            className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all active:scale-95"
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <span className={`text-xs font-bold px-2 py-1 rounded text-white bg-gradient-to-r ${lesson.color}`}>
+                                    {lesson.level}
+                                </span>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-800">{lesson.title}</h3>
+                            <p className="text-gray-500 text-sm mt-1">{lesson.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
 
-  return (
-    <div className="font-sans bg-gray-50 min-h-screen text-gray-900 max-w-md mx-auto relative shadow-2xl overflow-hidden">
-      {/* Dynamic Content */}
-      <div className="h-full overflow-y-auto scrollbar-hide">
-        {renderContent()}
-      </div>
+        const LessonDetailView = ({ lesson, onBack }) => {
+            const speakText = (text) => {
+                if ('speechSynthesis' in window) {
+                    // Cancel any previous speech
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'th-TH'; 
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    alert("您的瀏覽器不支援語音合成");
+                }
+            };
 
-      {/* Bottom Navigation */}
-      <Navigation activeTab={activeTab} setActiveTab={(tab) => {
-        setActiveTab(tab);
-        if (tab !== 'learn') setSelectedLesson(null);
-      }} />
-    </div>
-  );
-};
+            return (
+                <div className="pb-24 bg-gray-50 min-h-screen">
+                    <div className="sticky top-0 bg-white shadow-sm z-10 px-4 py-3 flex items-center gap-3">
+                        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
+                            <ChevronRight className="rotate-180 text-gray-600" />
+                        </button>
+                        <h2 className="font-bold text-lg text-gray-800">{lesson.title}</h2>
+                    </div>
 
-export default ThaiLearningApp;
+                    <div className="p-4 space-y-4">
+                        {lesson.dialogues.map((line, idx) => (
+                            <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 items-start">
+                                <button 
+                                    onClick={() => speakText(line.thai)}
+                                    className="mt-1 min-w-[40px] h-[40px] rounded-full bg-purple-100 flex items-center justify-center text-purple-600 hover:bg-purple-200 active:scale-95 transition-all"
+                                >
+                                    <Volume2 size={20} />
+                                </button>
+                                <div className="flex-1">
+                                    <p className="text-xl font-bold text-gray-800 font-thai">{line.thai}</p>
+                                    <p className="text-purple-600 font-medium text-sm">{line.pinyin}</p>
+                                    <p className="text-gray-500 text-sm mt-1">{line.cn}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <div className="fixed bottom-24 left-0 right-0 px-6 max-w-md mx-auto pointer-events-none">
+                        <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-lg text-center border border-blue-100 shadow-sm">
+                            提示：點擊喇叭圖示聽發音
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const SpeakPracticeView = () => {
+            const [isListening, setIsListening] = useState(false);
+            const [transcript, setTranscript] = useState('');
+            const [feedback, setFeedback] = useState(null); 
+            const [score, setScore] = useState(0);
+            const [currentIdx, setCurrentIdx] = useState(0);
+
+            const practiceSentences = LESSONS.flatMap(l => l.dialogues);
+            const currentSentence = practiceSentences[currentIdx];
+            const recognitionRef = useRef(null);
+
+            useEffect(() => {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    recognitionRef.current = new SpeechRecognition();
+                    recognitionRef.current.continuous = false;
+                    recognitionRef.current.interimResults = true;
+                    recognitionRef.current.lang = 'th-TH';
+
+                    recognitionRef.current.onresult = (event) => {
+                        const current = event.resultIndex;
+                        const transcriptText = event.results[current][0].transcript;
+                        setTranscript(transcriptText);
+                    };
+
+                    recognitionRef.current.onend = () => {
+                        setIsListening(false);
+                        // Delay evaluation slightly to ensure state is captured (in this simple version)
+                        // In a real app we might use a ref for transcript to avoid closure issues
+                    };
+                    
+                    recognitionRef.current.onerror = (event) => {
+                        console.error("Speech error", event.error);
+                        setIsListening(false);
+                    };
+
+                } else {
+                    // Fallback or warning is handled on click
+                }
+            }, []);
+
+            // Trigger evaluation when listening stops and we have a transcript
+            useEffect(() => {
+                if (!isListening && transcript) {
+                    evaluateSpeech(transcript);
+                }
+            }, [isListening, transcript]);
